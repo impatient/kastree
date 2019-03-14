@@ -1,6 +1,6 @@
 package kastree.ast
 
-open class MutableVisitor {
+open class MutableVisitor(open val extrasMap: ExtrasMap?) {
 
     open fun <T: Node?> preVisit(v: T, parent: Node): T = v
     open fun <T: Node?> postVisit(v: T, parent: Node): T = v
@@ -318,14 +318,26 @@ open class MutableVisitor {
                     else -> error("Unrecognized node: $this")
                 }
                 new.origOrChanged(this, newCh)
-            }.let { postVisit(it, parent) as T }.also { newCh.markIf(this, it) }
+            }.let { postVisit(it, parent) as T }.also {
+                newCh.markIf(this, it)
+                it?.let { newNode ->
+                    if(newCh.changed) {
+                        extrasMap?.alias(newNode as Node, this as Node)
+                    }
+                }
+            }
         }
     }
 
     protected inline fun <T: Node?> Node?.visitChildren(v: T, ch: ChangedRef): T = visit(v, this!!, ch)
 
     protected inline fun <T: Node?> Node?.visitChildren(v: List<T>, ch: ChangedRef): List<T> = ch.sub { newCh ->
-        val newList = v.map { orig -> visit(orig, this!!, newCh).also { newCh.markIf(it, orig) } }
+        val newList = v.map { orig -> visit(orig, this!!, newCh).also {
+            newCh.markIf(it, orig)
+            if(newCh.changed) {
+                extrasMap?.alias(it as Node, orig as Node)
+            }
+        } }
         newList.origOrChanged(v, newCh)
     }
 
@@ -340,11 +352,11 @@ open class MutableVisitor {
     }
 
     companion object {
-        fun <T: Node> preVisit(v: T, fn: (v: Node?, parent: Node) -> Node?) = object : MutableVisitor() {
+        fun <T: Node> preVisit(v: T, extrasMap: ExtrasMap? = null, fn: (v: Node?, parent: Node) -> Node?) = object : MutableVisitor(extrasMap) {
             override fun <T : Node?> preVisit(v: T, parent: Node): T = fn(v, parent) as T
         }.visit(v, v)
 
-        fun <T: Node> postVisit(v: T, fn: (v: Node?, parent: Node) -> Node?) = object : MutableVisitor() {
+        fun <T: Node> postVisit(v: T, extrasMap: ExtrasMap? = null, fn: (v: Node?, parent: Node) -> Node?) = object : MutableVisitor(extrasMap) {
             override fun <T : Node?> postVisit(v: T, parent: Node): T = fn(v, parent) as T
         }.visit(v, v)
     }

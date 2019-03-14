@@ -722,6 +722,10 @@ open class Converter {
         override fun extrasWithin(v: Node) = nodesToPsiIdentities[v]?.let { extrasWithin[it] } ?: emptyList()
         override fun extrasAfter(v: Node) = nodesToPsiIdentities[v]?.let { extrasAfter[it] } ?: emptyList()
 
+        override fun alias(newNode:Node, originalNode: Node ) {
+            nodesToPsiIdentities[newNode] = nodesToPsiIdentities[originalNode]
+        }
+
         internal val allExtrasBefore get() = extrasBefore
         internal val allExtrasAfter get() = extrasAfter
 
