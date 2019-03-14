@@ -322,7 +322,9 @@ open class MutableVisitor(open val extrasMap: ExtrasMap?) {
                 newCh.markIf(this, it)
                 it?.let { newNode ->
                     if(newCh.changed) {
-                        extrasMap?.alias(newNode as Node, this as Node)
+                        if(this != null) {
+                            extrasMap?.alias(newNode as Node, this as Node)
+                        }
                     }
                 }
             }
@@ -335,7 +337,9 @@ open class MutableVisitor(open val extrasMap: ExtrasMap?) {
         val newList = v.map { orig -> visit(orig, this!!, newCh).also {
             newCh.markIf(it, orig)
             if(newCh.changed) {
-                extrasMap?.alias(it as Node, orig as Node)
+                if(it != null && orig != null) {
+                    extrasMap?.alias(it as Node, orig as Node)
+                }
             }
         } }
         newList.origOrChanged(v, newCh)
